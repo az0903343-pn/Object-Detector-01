@@ -24,7 +24,6 @@ CLASSES_MAPPING = {
 def run_decision_tree_classifier(frame_inventory):
     """
     Algorithmic execution of a multi-node Decision Tree Split based on detected items.
-    Checks the density parameters to declare room status verdict overlays.
     """
     computer_hardware = frame_inventory.get('laptop', 0) + frame_inventory.get('keyboard', 0) + frame_inventory.get('mouse', 0)
     classroom_furniture = frame_inventory.get('chair', 0) + frame_inventory.get('book', 0) + frame_inventory.get('dining table', 0)
@@ -89,7 +88,7 @@ class Isometric3DPILProcessor(VideoProcessorBase):
             draw.line([(x_start, y_end), (x_start_b, y_end_b)], fill=(0, 255, 255), width=2)
             draw.line([(x_end, y_end), (x_end_b, y_end_b)], fill=(0, 255, 255), width=2)
             
-            # 3. Render Front Facing Primary Screen Geometry (Bright Neon Cyan Glow)
+            # 3. Render Front Facing Primary Geometry Plane (Bright Neon Cyan Glow)
             draw.rectangle([x_start, y_start, x_end, y_end], outline=(0, 255, 255), width=2)
             
             # Overlay metadata indicators text labels tracking status
@@ -99,16 +98,17 @@ class Isometric3DPILProcessor(VideoProcessorBase):
         # Pass tracking metrics directly to decision system array structures
         ml_system_verdict = run_decision_tree_classifier(current_frame_inventory)
         
-        # Render a modern real-time HUD Status board dashboard overlay at top center boundary limits
-        draw.rectangle([15, 15, 650, 65], fill=(0, 0, 0))
-        draw.rectangle([15, 15, 650, 65], outline=(0, 255, 255), width=1)
+        # Render a modern real-time HUD Status board dashboard overlay
+        draw.rectangle([15, 15, 650, 60], fill=(0, 0, 0))
+        draw.rectangle([15, 15, 650, 60], outline=(0, 255, 255), width=1)
         draw.text((25, 30), ml_system_verdict, fill=(0, 255, 0))
         
         return frame.from_ndarray(np.array(pil_img), format="rgb24")
 
-# 3. Launch WebRTC video interface pipeline (Clean configuration setup fallback rules)
+# 3. Launch WebRTC video interface with correct STUN formatting to bypass network blockages
 webrtc_streamer(
     key="isometric-3d-pure-python-module",
     video_processor_factory=Isometric3DPILProcessor,
+    rtc_configuration={"iceServers": [{"urls": ["create-unique-stun-url", "stun:://google.com"]}]},
     media_stream_constraints={"video": True, "audio": False}
 )
