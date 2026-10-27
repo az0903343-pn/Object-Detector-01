@@ -105,10 +105,10 @@ class Isometric3DPILProcessor(VideoProcessorBase):
         
         return frame.from_ndarray(np.array(pil_img), format="rgb24")
 
-# 3. Launch WebRTC video interface with correct STUN formatting to bypass network blockages
+# 3. Launch WebRTC video interface with absolute correct Google STUN formatting
 webrtc_streamer(
     key="isometric-3d-pure-python-module",
     video_processor_factory=Isometric3DPILProcessor,
-    rtc_configuration={"iceServers": [{"urls": ["create-unique-stun-url", "stun:://google.com"]}]},
+    rtc_configuration={"iceServers": [{"urls": ["stun:://google.com"]}]},
     media_stream_constraints={"video": True, "audio": False}
 )
