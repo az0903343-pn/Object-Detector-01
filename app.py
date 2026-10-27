@@ -1,5 +1,5 @@
 # =========================================================================
-# FINAL ULTIMATE RUNTIME MATRIX: CV2 AND ULTRALYTICS FREE ARCHITECTURE
+# FINAL ULTIMATE RUNTIME MATRIX: CV2 AND ULTRALYTICS FREE ARCHITECTURE (FIXED ICE SYNTAX)
 # =========================================================================
 import streamlit as st
 from streamlit_webrtc import webrtc_streamer, VideoProcessorBase
@@ -48,7 +48,6 @@ class Isometric3DPILProcessor(VideoProcessorBase):
         draw = ImageDraw.Draw(pil_img)
         
         # Simulated continuous prediction tracking loop matrix for low hardware footprint
-        # Prevents py3.14 sub-module loader compilation leak crashes
         simulated_detections = []
         if h_img > 100 and w_img > 100:
             # Injecting mock layout test nodes simulating a live tree grid parse
@@ -97,9 +96,10 @@ class Isometric3DPILProcessor(VideoProcessorBase):
         
         return frame.from_ndarray(np.array(pil_img), format="rgb24")
 
+# FIXED: Removed array syntax mistake around iceServers urls mapping
 webrtc_streamer(
     key="isometric-3d-pure-python-module",
     video_processor_factory=Isometric3DPILProcessor,
-    rtc_configuration={"iceServers": [{"urls": ["stun:://google.com"]}]},
+    rtc_configuration={"iceServers": [{"urls": "stun:://google.com"}]},
     media_stream_constraints={"video": True, "audio": False}
 )
