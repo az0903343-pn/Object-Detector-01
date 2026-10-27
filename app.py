@@ -1,23 +1,30 @@
 # =========================================================================
-# STANDARD STABLE FRAMEWORK: SIMULATED 3D CAMERA MESH & DECISION ENGINE
+# FINAL RUNTIME MATRIX: CV2-FREE STABLE DESIGN WITH PIL & NUMPY RENDERING
 # =========================================================================
 import streamlit as st
 from streamlit_webrtc import webrtc_streamer, VideoProcessorBase
-import cv2
 from ultralytics import YOLO
 import numpy as np
+from PIL import Image, ImageDraw, ImageFont
+import os
+import urllib.request
 
-# Page Configuration Setup
-st.set_page_config(page_title="Ultra 3D Engine", layout="wide")
+# Interface setup configuration layout optimization
+st.set_page_config(page_title="Ultra 3D Classifier", layout="wide")
 st.title("🤖 Ultra Pro 3D Mesh Engine & Decision Tree Classifier")
-st.write("Live webcam object tracking and recognition with simulated 3D vector space graphics.")
+st.write("Live webcam object tracking and recognition with simulated 3D vector space graphics (Stable PIL Version).")
 
 @st.cache_resource
 def load_vision_weights():
-    try:
-        return YOLO("best.pt")
-    except:
-        return YOLO("yolov8n.pt")
+    """
+    Checks if model weights file exists, otherwise dynamically pulls it from server clusters.
+    """
+    weights_filename = "yolov8n.pt"
+    if not os.path.exists(weights_filename):
+        with st.spinner("Downloading base anchor model weights from secure server..."):
+            url = "https://github.com"
+            urllib.request.urlretrieve(url, weights_filename)
+    return YOLO(weights_filename)
 
 vision_model = load_vision_weights()
 
@@ -35,11 +42,18 @@ def run_decision_tree_classifier(frame_inventory):
     else:
         return "🔍 ENGINE STATUS: ACTIVE BACKGROUND SCANNING MODE..."
 
-class Isometric3DGraphicsProcessor(VideoProcessorBase):
+class Isometric3DPILProcessor(VideoProcessorBase):
     def recv(self, frame):
-        video_frame = frame.to_ndarray(format="bgr24")
-        prediction_results = vision_model(video_frame, conf=0.40, stream=True)
+        # Convert streamlit stream frame to numpy array format safely
+        img_rgb = frame.to_ndarray(format="rgb24")
+        
+        # Run inference using the loaded model weights directly on RGB array
+        prediction_results = vision_model(img_rgb, conf=0.40, stream=True)
         current_frame_inventory = {}
+        
+        # Convert numpy array to PIL Image for rendering shapes without cv2 dependency
+        pil_img = Image.fromarray(img_rgb)
+        draw = ImageDraw.Draw(pil_img)
         
         for frame_data in prediction_results:
             bounding_boxes = frame_data.boxes
@@ -51,37 +65,46 @@ class Isometric3DGraphicsProcessor(VideoProcessorBase):
                 x_start, y_start, x_end, y_end = map(int, individual_box.xyxy)
                 box_confidence = float(individual_box.conf)
                 
-                # --- 3D GRAPHICS ENGINE MATRIX ---
+                # --- ULTRA PRO 3D MODEL ISOMETRIC VECTOR GRAPHICS ENGINE (PIL VERSION) ---
                 box_width = x_end - x_start
                 box_height = y_end - y_start
                 depth_offset = int(min(box_width, box_height) * 0.25)
                 
-                pt1_f, pt2_f = (x_start, y_start), (x_end, y_end)
-                pt1_b = (x_start + depth_offset, y_start - depth_offset)
-                pt2_b = (x_end + depth_offset, y_end - depth_offset)
+                # Coordinates calculation for front and back faces
+                x_start_b, y_start_b = x_start + depth_offset, y_start - depth_offset
+                x_end_b, y_end_b = x_end + depth_offset, y_end - depth_offset
                 
-                cv2.rectangle(video_frame, pt1_b, pt2_b, (180, 105, 50), 1)
-                cv2.line(video_frame, pt1_f, pt1_b, (255, 255, 0), 2)
-                cv2.line(video_frame, (x_end, y_start), (x_end + depth_offset, y_start - depth_offset), (255, 255, 0), 2)
-                cv2.line(video_frame, (x_start, y_end), (x_start + depth_offset, y_end - depth_offset), (255, 255, 0), 2)
-                cv2.line(video_frame, pt2_f, pt2_b, (255, 255, 0), 2)
-                cv2.rectangle(video_frame, pt1_f, pt2_f, (255, 255, 0), 2)
+                # 1. Draw Back Plane Face Geometry (Dark Orange Line Shift)
+                draw.rectangle([x_start_b, y_start_b, x_end_b, y_end_b], outline=(180, 105, 50), width=1)
                 
-                overlay_string = f"[{detected_name.upper()}] Conf: {box_confidence * 100:.1f}%"
-                cv2.putText(video_frame, overlay_string, (x_start, y_start - 12), 
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 0), 2)
+                # 2. Draw Connecting Depth Lines (3D Mesh wireframe simulation)
+                draw.line([(x_start, y_start), (x_start_b, y_start_b)], fill=(0, 255, 255), width=2)
+                draw.line([(x_end, y_start), (x_end + depth_offset, y_start_b)], fill=(0, 255, 255), width=2)
+                draw.line([(x_start, y_end), (x_start_b, y_end_b)], fill=(0, 255, 255), width=2)
+                draw.line([(x_end, y_end), (x_end_b, y_end_b)], fill=(0, 255, 255), width=2)
+                
+                # 3. Draw Front Facing Primary Geometry Plane (Neon Cyan/Blue Glow)
+                draw.rectangle([x_start, y_start, x_end, y_end], outline=(0, 255, 255), width=2)
+                
+                # Draw Interactive HUD overlay string labels text
+                overlay_string = f"[{detected_name.upper()}] {box_confidence * 100:.1f}%"
+                draw.text((x_start, y_start - 15), overlay_string, fill=(0, 255, 255))
 
+        # Trigger processing check on background Decision Tree system routing layer
         ml_system_verdict = run_decision_tree_classifier(current_frame_inventory)
-        cv2.rectangle(video_frame, (15, 15), (650, 60), (0, 0, 0), -1)
-        cv2.rectangle(video_frame, (15, 15), (650, 60), (255, 255, 0), 1)
-        cv2.putText(video_frame, ml_system_verdict, (25, 45), 
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.60, (0, 255, 0), 2)
         
-        return frame.from_ndarray(video_frame, format="bgr24")
+        # Render a sleek modern HUD Status Board Dashboard banner at the top of the interface
+        draw.rectangle([15, 15, 650, 60], fill=(0, 0, 0))
+        draw.rectangle([15, 15, 650, 60], outline=(0, 255, 255), width=1)
+        draw.text((25, 30), ml_system_verdict, fill=(0, 255, 0))
+        
+        # Convert PIL back to standard NumPy frame structure format for client browser
+        return frame.from_ndarray(np.array(pil_img), format="rgb24")
 
+# Launch direct Client Camera Portal view frame channel
 webrtc_streamer(
-    key="isometric-3d-decision-module",
-    video_processor_factory=Isometric3DGraphicsProcessor,
+    key="isometric-3d-pil-decision-module",
+    video_processor_factory=Isometric3DPILProcessor,
     rtc_configuration={"iceServers": [{"urls": ["stun:://google.com"]}]},
     media_stream_constraints={"video": True, "audio": False}
 )
